@@ -6,7 +6,8 @@ output: github_document
 ---
 ```{r setup, include = FALSE}
 library(tidyverse)
-library(rvest)
+library(modelr)
+library(mgcv)
 knitr::opts_chunk$set(
 	echo = TRUE,
 	warning = FALSE,
@@ -24,3 +25,128 @@ theme_set(theme_minimal() + theme(legend.position = "bottom", text = element_tex
 
 set.seed(1)
 ```
+
+
+
+## Problem 1
+
+### Load and clean the data
+```{r}
+birthweight = 
+  read.csv("./data/birthweight.csv") %>% 
+  janitor::clean_names() %>% 
+  drop_na() %>% 
+  mutate(
+    babysex = recode(babysex,"1" = "male",  "2" = "female") %>% 
+      as.factor(),
+    frace = recode(frace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other","9" = "Unknown") %>% 
+      as.factor(),
+    malform = recode(malform, "0" = "absent", "1" = "present") %>% 
+      as.factor(),
+    mrace = recode(mrace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other") %>% 
+      as.factor()
+  )
+    
+```
+
+
+
+### Propose a regression model
+
+Initial model: 
+```{r}
+fit1  = lm(bwt ~ babysex + bhead + blength + delwt + fincome + frace + gaweeks + menarche + momage + mheight + mrace + parity + pnumlbw + pnumsga + ppbmi + ppwt + smoken + wtgain, data = birthweight)
+summary(fit1)
+```
+First I built a model using lots of factors, then I remove some inappropriate factors(collinearity or not significant) and add interactions to rebuild the model.
+
+Rebuilt the model:
+```{r}
+fit2  = lm(bwt ~ babysex * bhead * blength + delwt + gaweeks + ppbmi + smoken, data = birthweight)
+summary(fit2)
+fit2 %>% 
+  broom::tidy() %>% 
+  knitr::kable()
+```
+
+### Plot of residuals against fitted values
+```{r}
+birthweight %>% 
+  add_residuals(fit2) %>% 
+  add_predictions(fit2) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point() +
+  labs(
+    x = "Fitted Values",
+    y = "Residuals",
+    title = "Residuals against Fitted Values"
+  ) +
+  geom_line( y = 0, color = "red")
+
+```
+
+
+
+### Compare your model to two others:
+
+One using length at birth and gestational age as predictors (main effects only)
+
+```{r}
+fit3  = lm(bwt ~ blength + gaweeks, data = birthweight)
+summary(fit3)
+fit3 %>% 
+  broom::tidy()
+```
+
+
+One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
+
+```{r}
+fit4  = lm(bwt ~ babysex * bhead * blength, data = birthweight)
+summary(fit4)
+fit4 %>% 
+  broom::tidy()
+```
+
+### Cross - Validation
+```{r}
+cv_df =
+  crossv_mc(birthweight, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df %>% 
+  mutate(my_mod = map(train, ~fit2),
+         main_mod = map(train, ~fit3),
+         interaction_mod = map(train, ~fit4)) %>% 
+  mutate(rmse_my = map2_dbl(my_mod, test, ~rmse(model = .x, data = .y)),
+         rmse_main    = map2_dbl(main_mod, test, ~rmse(model = .x, data = .y)),
+         rmse_interaction = map2_dbl(interaction_mod, test, ~rmse(model = .x, data = .y))
+         )
+
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  
+```
+
+
+From the plot we could see that the rmse of main model is the highest. And my model's rmse is lowest. It might indicates that my model fits better.
+
+
+
+
+## Problem 2
+```{r}
+
+```
+
