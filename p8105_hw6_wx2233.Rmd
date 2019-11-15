@@ -95,7 +95,8 @@ One using length at birth and gestational age as predictors (main effects only)
 fit3  = lm(bwt ~ blength + gaweeks, data = birthweight)
 summary(fit3)
 fit3 %>% 
-  broom::tidy()
+  broom::tidy() %>% 
+  knitr::kable()
 ```
 
 
@@ -106,7 +107,8 @@ Make this comparison in terms of the cross-validated prediction error; use cross
 fit4  = lm(bwt ~ babysex * bhead * blength, data = birthweight)
 summary(fit4)
 fit4 %>% 
-  broom::tidy()
+  broom::tidy() %>% 
+  knitr::kable()
 ```
 
 ### Cross - Validation
@@ -135,7 +137,8 @@ pivot_longer(
     values_to = "rmse",
     names_prefix = "rmse_") %>% 
   mutate(model = fct_inorder(model)) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin(aes(fill = model), alpha = .4)
   
 ```
 
