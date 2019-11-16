@@ -168,33 +168,75 @@ log(β̂ 0∗β̂ 1)
 
 Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2 and log(β̂ 0∗β̂ 1). Note: broom::glance() is helpful for extracting r̂ 2 from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂ 0∗β̂ 1).
 
-Optional post-assignment survey
+### Bootstrap
 ```{r}
-weather_df %>% 
-  lm(tmax ~ tmin, data =. ) %>% 
-  broom::tidy() %>% 
-  select(estimate)
-
-mod = weather_df %>% 
-  lm(tmax ~ tmin, data =. )
-
-log_results = c()
-logest = function(mod){
+estimate_fun = function(mod){
   mod_results =
     mod %>% 
-    broom::tidy() 
-  log_results = 
-    pull(mod_results,estimate)[1] * pull(estimate)[2]
+    broom::tidy()
+  tibble(
+    r_squared = pull(mod %>% broom::glance(),adj.r.squared),
+    log_result = log(pull(mod_results,estimate)[1] * pull(mod_results,estimate)[2]),
+  )
 }
-
-logest(mod)
 
 weather_results = 
  weather_df %>% 
-  modelr::bootstrap(n = 5) %>% 
+  modelr::bootstrap(n = 5000) %>% 
   mutate(
     models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
-    results = map(models, broom::tidy)) %>% 
+    results = map(models, estimate_fun)) %>% 
   unnest(results)
+
+weather_results %>% 
+  head(5)
 ```
+
+### Distribution of two estimate quantities
+```{r}
+mean_and_sd = function(x) {
+  estimate_mean = mean(x)
+  estimate_sd = sd(x)
+  tibble(
+    estimate_mean,
+    estimate_sd
+  )
+}
+
+weather_results %>% 
+  select(-strap,-.id,-models) %>% 
+  map(~mean_and_sd(.)) %>% bind_rows() %>% 
+  mutate(
+    quantity = c("r_squared","logbeta01")
+  ) %>% 
+  select(quantity,everything())
+```
+
+Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. 
+
+The mean of r square is 0.91, the sd of r square is 0.0085, which shows that the r square is high, the model is explainable.
+The mean of log(beta0beta1) is 2.01, the sd of log(beta0beta1) is 0.024.
+
+
+The r_squared is right skewed.
+```{r}
+weather_results %>% 
+  ggplot(aes(x = r_squared, y = ..density..)) +
+  geom_histogram(binwidth = 0.001, position = "dodge",fill = "#FF9999") +
+  geom_density(alpha = .4, adjust = .5, color = "#FF9999",fill = "#FF9999")
+```
+
+The log(beta0beta1)  is almost normal distributed.
+
+```{r}
+
+weather_results %>% 
+  ggplot(aes(x = log_result, y = ..density..)) +
+  geom_histogram(binwidth = 0.002, position = "dodge",fill = "#99CCFF") +
+  geom_density(alpha = .4, adjust = .5, color = "#99CCFF",fill = "#99CCFF") +
+  labs(
+    x = "log(beta0*beta1)"
+  )
+```
+
 
