@@ -146,10 +146,55 @@ pivot_longer(
 From the plot we could see that the rmse of main model is the highest. And my model's rmse is lowest. It might indicates that my model fits better.
 
 
-
-
 ## Problem 2
 ```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
 
+The boostrap is helpful when you’d like to perform inference for a parameter / value / summary that doesn’t have an easy-to-write-down distribution in the usual repeated sampling framework. We’ll focus on a simple linear regression with tmax as the response and tmin as the predictor, and are interested in the distribution of two quantities estimated from these data:
+
+r̂ 2
+log(β̂ 0∗β̂ 1)
+
+Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2 and log(β̂ 0∗β̂ 1). Note: broom::glance() is helpful for extracting r̂ 2 from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂ 0∗β̂ 1).
+
+Optional post-assignment survey
+```{r}
+weather_df %>% 
+  lm(tmax ~ tmin, data =. ) %>% 
+  broom::tidy() %>% 
+  select(estimate)
+
+mod = weather_df %>% 
+  lm(tmax ~ tmin, data =. )
+
+log_results = c()
+logest = function(mod){
+  mod_results =
+    mod %>% 
+    broom::tidy() 
+  log_results = 
+    pull(mod_results,estimate)[1] * pull(estimate)[2]
+}
+
+logest(mod)
+
+weather_results = 
+ weather_df %>% 
+  modelr::bootstrap(n = 5) %>% 
+  mutate(
+    models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::tidy)) %>% 
+  unnest(results)
 ```
 
