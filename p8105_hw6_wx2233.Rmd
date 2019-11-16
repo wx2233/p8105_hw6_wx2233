@@ -203,6 +203,7 @@ mean_and_sd = function(x) {
   )
 }
 
+estimate_results = 
 weather_results %>% 
   select(-strap,-.id,-models) %>% 
   map(~mean_and_sd(.)) %>% bind_rows() %>% 
@@ -210,6 +211,9 @@ weather_results %>%
     quantity = c("r_squared","logbeta01")
   ) %>% 
   select(quantity,everything())
+
+estimate_results %>% 
+  knitr::kable()
 ```
 
 Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. 
@@ -239,4 +243,19 @@ weather_results %>%
   )
 ```
 
+
+Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2 and log(β̂ 0∗β̂ 1). 
+
+
+a 95% confidence interval: mean ± 1.64 × sd/sqrt(n) 
+
+```{r}
+
+estimate_results %>% 
+  mutate(
+    CI_lwr =  estimate_mean - 1.64 * estimate_sd/sqrt(5000),
+    CI_upr =  estimate_mean + 1.64 * estimate_sd/sqrt(5000)
+  ) %>% 
+  knitr::kable()
+```
 
