@@ -202,8 +202,9 @@ weather_results %>%
   select(quantity,everything())
 
 estimate_results %>% 
-  knitr::kable()
+  knitr::kable(digits = 4)
 ```
+
 The mean of r square is 0.91, the sd of r square is 0.0085, which shows that the r square is high, the model is explainable.
 
 The mean of log(beta0beta1) is 2.01, the sd of log(beta0beta1) is 0.024.
@@ -229,31 +230,17 @@ weather_results %>%
   )
 ```
 
-calculate a 95% confidence interval: mean ± 1.64 × sd/sqrt(n) 
+calculate a 95% confidence interval:
 
 ```{r}
-estimate_results %>% 
-  mutate(
-    CI_lwr =  estimate_mean - 1.64 * estimate_sd/sqrt(5000),
-    CI_upr =  estimate_mean + 1.64 * estimate_sd/sqrt(5000)
-  ) %>% 
-  knitr::kable()
-```
-
-use t test: 
-```{r}
-## use t test
-t_test_result_r_2 = t.test(pull(weather_results,r_squared))
-t_test_result_log01 = t.test(pull(weather_results,log_result)) 
-
-conf_int = 
-tibble(
-  cv_lwr = c(t_test_result_r_2[[4]][1],t_test_result_log01[[4]][1]),
-  cv_upr = c(t_test_result_r_2[[4]][2],t_test_result_log01[[4]][2])
-) %>% 
-  bind_rows() 
-
-bind_cols(estimate_results,conf_int) %>% 
-knitr::kable()
+CI_result = 
+  tibble(
+    Conf_int = c("lwr","upr"),
+    CI_R_2 = quantile(pull(weather_results,r_squared), probs = c(0.025, 0.975),na.rm = TRUE),
+    CI_logbeta01 =  quantile(pull(weather_results,log_result), probs = c(0.025, 0.975), na.rm = TRUE)
+  )
+  
+CI_result %>% 
+   knitr::kable(digits = 3)
 ```
 
