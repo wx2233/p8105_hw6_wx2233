@@ -89,7 +89,6 @@ birthweight %>%
 
 ### Compare your model to two others:
 
-One using length at birth and gestational age as predictors (main effects only)
 
 ```{r}
 fit3  = lm(bwt ~ blength + gaweeks, data = birthweight)
@@ -98,10 +97,6 @@ fit3 %>%
   broom::tidy() %>% 
   knitr::kable()
 ```
-
-
-One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
-Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
 
 ```{r}
 fit4  = lm(bwt ~ babysex * bhead * blength, data = birthweight)
@@ -142,7 +137,6 @@ pivot_longer(
   
 ```
 
-
 From the plot we could see that the rmse of main model is the highest. And my model's rmse is lowest. It might indicates that my model fits better.
 
 
@@ -161,12 +155,7 @@ weather_df =
   select(name, id, everything())
 ```
 
-The boostrap is helpful when you’d like to perform inference for a parameter / value / summary that doesn’t have an easy-to-write-down distribution in the usual repeated sampling framework. We’ll focus on a simple linear regression with tmax as the response and tmin as the predictor, and are interested in the distribution of two quantities estimated from these data:
 
-r̂ 2
-log(β̂ 0∗β̂ 1)
-
-Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2 and log(β̂ 0∗β̂ 1). Note: broom::glance() is helpful for extracting r̂ 2 from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂ 0∗β̂ 1).
 
 ### Bootstrap
 ```{r}
@@ -215,14 +204,11 @@ weather_results %>%
 estimate_results %>% 
   knitr::kable()
 ```
-
-Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. 
-
 The mean of r square is 0.91, the sd of r square is 0.0085, which shows that the r square is high, the model is explainable.
+
 The mean of log(beta0beta1) is 2.01, the sd of log(beta0beta1) is 0.024.
 
-
-The r_squared is right skewed.
+The r_squared is a little left skewed(almost normal).
 ```{r}
 weather_results %>% 
   ggplot(aes(x = r_squared, y = ..density..)) +
@@ -243,19 +229,31 @@ weather_results %>%
   )
 ```
 
-
-Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2 and log(β̂ 0∗β̂ 1). 
-
-
-a 95% confidence interval: mean ± 1.64 × sd/sqrt(n) 
+calculate a 95% confidence interval: mean ± 1.64 × sd/sqrt(n) 
 
 ```{r}
-
 estimate_results %>% 
   mutate(
     CI_lwr =  estimate_mean - 1.64 * estimate_sd/sqrt(5000),
     CI_upr =  estimate_mean + 1.64 * estimate_sd/sqrt(5000)
   ) %>% 
   knitr::kable()
+```
+
+use t test: 
+```{r}
+## use t test
+t_test_result_r_2 = t.test(weather_results$r_squared) 
+t_test_result_log01 = t.test(weather_results$log_result) 
+
+conf_int = 
+tibble(
+  cv_lwr = c(t_test_result_r_2[[4]][1],t_test_result_log01[[4]][1]),
+  cv_upr = c(t_test_result_r_2[[4]][2],t_test_result_log01[[4]][2])
+) %>% 
+  bind_rows() 
+
+bind_cols(estimate_results,conf_int) %>% 
+knitr::kable()
 ```
 
