@@ -84,7 +84,7 @@ birthweight %>%
   geom_line( y = 0, color = "red")
 
 ```
-
+The Residuals bounce around 0. But the variances of residuals are not constant.
 
 
 ### Compare your model to two others:
