@@ -205,9 +205,9 @@ estimate_results %>%
   knitr::kable(digits = 4)
 ```
 
-The mean of r square is 0.91, the sd of r square is 0.0085, which shows that the r square is high, the model is explainable.
+The mean of r square is `r round(pull(estimate_results,estimate_mean)[1],4)`, the sd of r square is `r round(pull(estimate_results,estimate_sd)[1],4)`, which shows that the r square is high, the model is explainable.
 
-The mean of log(beta0beta1) is 2.01, the sd of log(beta0beta1) is 0.024.
+The mean of log(beta0beta1) is `r round(pull(estimate_results,estimate_mean)[2],4)`, the sd of log(beta0beta1) is `r round(pull(estimate_results,estimate_sd)[2],4)`.
 
 The r_squared is a little left skewed(almost normal).
 ```{r}
@@ -243,4 +243,8 @@ CI_result =
 CI_result %>% 
    knitr::kable(digits = 3)
 ```
+
+
+
+
 
